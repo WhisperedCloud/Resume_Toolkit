@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Resume Builder & Analyzer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Recharts for Charts -->
+    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+    <!-- PDF.js for PDF Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- jsPDF for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Marked for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.1.1",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+        "react/": "https://aistudiocdn.com/react@^19.1.1/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0"
+      }
+    }
+    </script>
+    <!-- Custom Global Styles -->
+    <style>
+      /* Base styles */
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #111827; /* bg-gray-900 */
+      }
+      /* Glassmorphism Card */
+      .glassmorphic-card {
+        background: rgba(17, 24, 39, 0.5); /* bg-gray-900 with opacity */
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      /* Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      /* Form Styles */
+      .form-input, .form-textarea {
+        width: 100%;
+        background-color: rgba(31, 41, 55, 0.5); /* bg-gray-800/50 */
+        border: 1px solid #4b5563; /* border-gray-600 */
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: white;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: #3b82f6; /* border-blue-500 */
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+      }
+      /* Form Validation Styles */
+      .form-input.invalid, .form-textarea.invalid {
+        border-color: #f87171; /* border-red-400 */
+      }
+      .form-input.invalid:focus, .form-textarea.invalid:focus {
+        border-color: #ef4444; /* border-red-500 */
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+      }
+      .error-message {
+        color: #fca5a5; /* text-red-300 */
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+      }
+      /* Form Section Styles */
+      .form-section summary {
+        cursor: pointer;
+        list-style: none; /* Hide default triangle */
+      }
+      .form-section summary::-webkit-details-marker {
+        display: none; /* Hide default triangle for Safari */
+      }
+      .form-section summary .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .form-section summary .section-header::after {
+        content: '▼'; /* Collapsed state */
+        font-size: 0.8em;
+        transition: transform 0.2s;
+        color: #9ca3af; /* text-gray-400 */
+        margin-left: 1rem;
+      }
+      .form-section[open] > summary .section-header::after {
+        transform: rotate(180deg); /* Expanded state */
+      }
+      /* Prose styles for markdown preview */
+      .prose-invert pre {
+        background-color: transparent !important;
+        color: inherit !important;
+        padding: 0 !important;
+      }
+      /* Button Styles */
+      .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background-color: #2563eb;
+      }
+      .btn-primary:disabled {
+        background-color: #4b5563;
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background-color: rgba(55, 65, 81, 0.5);
+        color: #d1d5db; /* text-gray-300 */
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid #4b5563;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s, border-color 0.2s;
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background-color: rgba(75, 85, 99, 0.7);
+        border-color: #6b7280;
+      }
+      .btn-secondary-sm {
+        background-color: rgba(55, 65, 81, 0.5);
+        color: #d1d5db;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border: 1px solid #4b5563;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        transition: background-color 0.2s, border-color 0.2s;
+      }
+       .btn-secondary-sm:hover:not(:disabled) {
+        background-color: rgba(75, 85, 99, 0.7);
+        border-color: #6b7280;
+      }
+      /* Template Preview Styles */
+      .template-preview-wrapper h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #60a5fa; /* text-blue-400 */
+        border-bottom: 1px solid #4b5563; /* border-gray-600 */
+        padding-bottom: 0.5rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+       .template-preview-wrapper p, .template-preview-wrapper li {
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+      .template-preview-wrapper p {
+        margin-bottom: 0.5rem;
+      }
+      .template-preview-wrapper h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #e5e7eb; /* text-gray-200 */
+        margin-top: 1rem;
+        margin-bottom: 0.25rem;
+      }
+      .template-preview-wrapper ul {
+        list-style-type: disc;
+        padding-left: 1.25rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .template-preview-wrapper li {
+        margin-bottom: 0.375rem;
+      }
+      .template-preview-wrapper strong {
+        font-weight: 600;
+        color: #f9fafb; /* text-gray-50 */
+      }
+      /* Project Technology Tags */
+      .tech-tags-container {
+        margin-top: 0.75rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .tech-tag {
+        background-color: rgba(30, 64, 175, 0.5); /* bg-blue-900/50 */
+        color: #93c5fd; /* text-blue-300 */
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px; /* rounded-full */
+        border: 1px solid rgba(59, 130, 246, 0.4);
+      }
+       .template-preview-wrapper .resume-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+       }
+       .template-preview-wrapper .resume-header h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+       }
+       .template-preview-wrapper .resume-header p {
+        font-size: 0.8rem;
+        color: #9ca3af; /* text-gray-400 */
+       }
+
+      /* Modern Template Styles */
+      .template-modern .resume-header {
+        text-align: left;
+        border-bottom: 1px solid #4b5563; /* border-gray-600 */
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .template-modern h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #93c5fd; /* text-blue-300 */
+        border: none;
+        border-left: 3px solid #3b82f6; /* border-blue-500 */
+        padding-left: 0.75rem;
+      }
+
+       /* Professional Template Styles */
+      .template-professional .resume-header {
+          text-align: left;
+      }
+      .template-professional h2 {
+        color: #9ca3af; /* text-gray-400 */
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #374151; /* border-gray-700 */
+      }
+      
+      /* Technical Template Styles */
+      .template-technical .resume-header h1 {
+          font-family: monospace;
+      }
+      .template-technical h2 {
+        color: #3b82f6; /* text-blue-500 */
+        font-size: 1.1rem;
+        font-weight: 700;
+        border: none;
+        padding-bottom: 0.2rem;
+      }
+      .template-technical h2::before {
+        content: '>> ';
+        color: #6b7280; /* text-gray-500 */
+      }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

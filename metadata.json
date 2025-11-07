@@ -1,0 +1,5 @@
+{
+  "name": "AI Resume Builder & Analyzer",
+  "description": "A comprehensive tool to build a new, role-specific, ATS-friendly resume from scratch or analyze an existing resume for actionable feedback and scoring, all powered by the Gemini API.",
+  "requestFramePermissions": []
+}
