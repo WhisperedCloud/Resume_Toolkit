@@ -30,7 +30,7 @@ export const OpeningPage: React.FC<OpeningPageProps> = ({ onNavigateToBuilder, o
                 AI-Powered Resume Toolkit
             </h1>
             <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10">
-                Build a standout resume from scratch or analyze your existing one against ATS standards. Powered by Google Gemini.
+                Build a standout resume from scratch or analyze your existing one against ATS standards.
             </p>
 
             {isLoading ? (
